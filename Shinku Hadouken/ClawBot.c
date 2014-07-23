@@ -1,4 +1,7 @@
 /*Turning and moving content*/
+int n=600;
+int reflectValue=400; //highest color of white tape
+int countTime=0;
 
 int TurnOP=1400;		//Outer Pivot, for turning with one wheel
 int leftMotor=3;		//Left motor's position is 3.
@@ -47,41 +50,50 @@ int leftTurnOP(int turnSpeed)
 
 /*---------------------------*/
 
-int y1=300; //lowest color of white tape
-
 void followLine()//making minor code for following the line
 {
+	printf("1. Checking for touch.\n");
 	while (digital(10)==0)
 	{
-		while (analog(4)<y1)
+		printf("2. No touch. Checking reflect.\n");
+		while (analog(4)<=reflectValue)
 		{
-			mrp(1,500,2000);
-			mrp(3,500,2000);
+			printf("3. Reflect successful. Moving.\n");
+			motor(1,500);
+			motor(3,500);
+			msleep(500);
 		}
-		if (analog(4)>y1)//y1>y2
+		if (analog(4)>reflectValue)
 		{
-			mrp(1,300,n);//turn around, make SMALL TURNS, outer pivot
-			int countTime=0;
-			while (countTime<1000 && analog(4)>y1)
-			{
-				countTime=countTime+1;
+			printf("4. Reflect unsuccessful. Turning.\n");
+			motor(1,100);//turn around, make SMALL TURNS, outer pivot
+			countTime=0;									//countTime resets here.
+			while (countTime<500 && analog(4)>=reflectValue)	//countTime variable checks constantly and acts as a delay.
+			{													//if it either reaches 1000 or detects a line,
+				countTime=countTime+1;							//it moves on and turns.
+				msleep(2);
 			}
-			
-			if (countTime>=1000)
+			if (countTime>=500)
 			{
+				printf("5. Count time exceeded 1000. Turning.\n");
+				while (analog(4)>=reflectValue)
+				{	
+					motor(3,100);
+					msleep(1000);
+					ao();
+				}
 			}
 			
 			else
 			{
-				while (analog(4)>y1)
-				{	
-					mrp(1,300,-n);
-					mrp(3,300,n);
-				}
+				printf("6. Reached end of if.\n");
+				
 			}
 		}	//no "else", because that could give a false positive more easily
+		printf("7.End of while loop. Deactivating motors...\n");
 		ao();
 	}
+	ao();
 }
 
 
@@ -91,22 +103,12 @@ int upperServoPos=1531;
 int main()
 {
 	followLine();
-	mrp(1,500,-1400);
-	mrp(3,500,-1400);
-	msleep(3000);
-	
-	enable_servos();
-	set_servo_position(servo1port,lowerServoPos);
-	
-	mrp(1,500,-1400);
-	mrp(3,500,-1400);
 	
 	set_servo_position(servo1port,upperServoPos);
 	
 	rightTurnCP(500);
 	rightTurnCP(500);
-	goForwardPastLaptop(500);
-	goForwardPastLaptop(500);
+	followLine();
 	
 	return 0;
 }
